@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HP Inventory Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="libs/html5-qrcode.min.js"></script>
+    <script src="libs/JsBarcode.all.min.js"></script>
+  </head>
+  <body>
+    <div id="lock-screen" class="lock hidden">
+      <div class="lock-box">
+        <div class="lock-logo">📱 <span>HP</span> Inventory</div>
+        <p>Masukkan kode sandi untuk membuka aplikasi</p>
+        <input id="lock-input" type="password" placeholder="••••" autocomplete="off" />
+        <button id="lock-btn" class="btn primary">🔓 Buka Aplikasi</button>
+        <div id="lock-msg" class="msg"></div>
+      </div>
+    </div>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-wrap">
+          <div class="brand-mark">📱</div>
+          <div>
+            <div class="brand-name">HP Inventory</div>
+            <div class="brand-sub">Pro Dashboard</div>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-btn active" data-page="dashboard">📊 Dashboard</button>
+          <button class="nav-btn" data-page="checkout">📤 Keluar</button>
+          <button class="nav-btn" data-page="checkin">📥 Kembali</button>
+          <button class="nav-btn" data-page="maintenance">🔧 Servis</button>
+          <button class="nav-btn" data-page="devices">📦 Barang</button>
+          <button class="nav-btn" data-page="users">👤 Karyawan</button>
+          <button class="nav-btn" data-page="reports">📄 Laporan</button>
+          <button class="nav-btn" data-page="settings">⚙️ Pengaturan</button>
+        </nav>
+
+        <div id="sidebar-store" class="sidebar-status">Data tersimpan lokal di browser</div>
+      </aside>
+
+      <main class="content">
+        <div id="file-banner" class="file-banner hidden"></div>
+
+        <section id="page-dashboard" class="page">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Overview</span>
+              <h1>Dashboard</h1>
+            </div>
+          </div>
+          <div id="dash-cards" class="stats-grid"></div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Unit Sedang Dipinjam</h2>
+            </div>
+            <div class="table-wrap">
+              <table id="dash-borrowed"></table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Transaksi Terbaru</h2>
+            </div>
+            <div class="table-wrap">
+              <table id="dash-recent"></table>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-checkout" class="page hidden">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Pinjam</span>
+              <h1>HP Keluar</h1>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head small">
+                <h2>1. Peminjam</h2>
+              </div>
+              <div class="scan-row">
+                <input id="co-user-input" type="text" placeholder="Scan / ketik kode karyawan lalu Enter" />
+                <button class="btn cam-btn" data-scan-target="user">📷 Kamera</button>
+              </div>
+              <div id="co-user-info" class="info-box"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head small">
+                <h2>2. Unit HP</h2>
+              </div>
+              <div class="scan-row">
+                <input id="co-device-input" type="text" placeholder="Scan / ketik barcode HP lalu Enter" />
+                <button class="btn cam-btn" data-scan-target="device">📷 Kamera</button>
+              </div>
+
+              <div class="inline-form">
+                <label>
+                  Estimasi kembali
+                  <input id="co-expected" type="datetime-local" />
+                </label>
+                <label>
+                  Kondisi awal
+                  <input id="co-condition" type="text" value="Kondisi Baik" />
+                </label>
+              </div>
+
+              <div id="co-device-list" class="device-list"></div>
+              <div class="actions">
+                <button id="co-save" class="btn primary" disabled>💾 Simpan</button>
+                <button id="co-reset" class="btn ghost">↺ Reset</button>
+              </div>
+            </div>
+          </div>
+          <div id="co-msg" class="msg"></div>
+        </section>
+
+        <section id="page-checkin" class="page hidden">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Kembali</span>
+              <h1>HP Kembali</h1>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head small">
+              <h2>Scan barcode unit yang dikembalikan</h2>
+            </div>
+            <div class="scan-row">
+              <input id="ci-device-input" type="text" placeholder="Scan / ketik barcode HP lalu Enter" />
+              <button class="btn cam-btn" data-scan-target="checkin">📷 Kamera</button>
+            </div>
+            <div id="ci-info" class="info-box"></div>
+
+            <div id="ci-form" class="hidden form-block">
+              <div class="inline-form">
+                <label>
+                  Kondisi saat kembali
+                  <select id="ci-condition">
+                    <option value="Baik">Baik</option>
+                    <option value="Lecet pemakaian">Lecet pemakaian</option>
+                    <option value="Rusak">Rusak</option>
+                    <option value="Bermasalah - perlu cek">Bermasalah - perlu cek</option>
+                  </select>
+                </label>
+                <label>
+                  Catatan
+                  <input id="ci-note" type="text" placeholder="mis. Baterai 80%, layar normal" />
+                </label>
+              </div>
+
+              <label class="checkbox-row">
+                <input id="ci-maintenance" type="checkbox" />
+                <span>Tandai unit sebagai Maintenance setelah kembali</span>
+              </label>
+
+              <div class="actions">
+                <button id="ci-save" class="btn primary">✅ Konfirmasi</button>
+                <button id="ci-cancel" class="btn ghost">Batal</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-maintenance" class="page hidden">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Servis</span>
+              <h1>Maintenance</h1>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="panel">
+              <div class="panel-head small">
+                <h2>1. Kartu peminjam</h2>
+              </div>
+              <div class="scan-row">
+                <input id="mt-user-input" type="text" placeholder="Scan / ketik kode kartu peminjam" />
+                <button class="btn cam-btn" data-scan-target="maintenance-user">📷 Kamera</button>
+              </div>
+              <div id="mt-user-info" class="info-box"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head small">
+                <h2>2. Unit servis</h2>
+              </div>
+              <div class="scan-row">
+                <input id="mt-device-input" type="text" placeholder="Scan / ketik barcode HP lalu Enter" />
+                <button class="btn cam-btn" data-scan-target="maintenance">📷 Kamera</button>
+              </div>
+              <div id="mt-info" class="info-box"></div>
+
+              <div class="form-block">
+                <label>
+                  Tujuan / Vendor Servis
+                  <input id="mt-dest" type="text" placeholder="mis. Service Center Samsung" />
+                </label>
+                <label>
+                  Catatan
+                  <input id="mt-note" type="text" placeholder="mis. Ganti LCD, estimasi 3 hari" />
+                </label>
+              </div>
+
+              <div class="actions">
+                <button id="mt-save" class="btn primary">📤 Konfirmasi</button>
+                <button id="mt-cancel" class="btn ghost">Batal</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel top-space">
+            <div class="panel-head">
+              <h2>Unit Sedang di Luar</h2>
+            </div>
+            <div class="table-wrap">
+              <table id="mt-out-table"></table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Riwayat Maintenance</h2>
+            </div>
+            <div class="table-wrap">
+              <table id="mt-history-table"></table>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-devices" class="page hidden">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Master</span>
+              <h1>Unit HP</h1>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <input id="dev-search" type="text" placeholder="Cari barcode, merek, model, IMEI..." />
+            <select id="dev-filter">
+              <option value="">Semua Status</option>
+              <option value="available">Tersedia</option>
+              <option value="borrowed">Dipinjam</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="lost">Hilang</option>
+            </select>
+            <button id="dev-print-sel" class="btn">🖨 Cetak Label (0)</button>
+            <button id="dev-add" class="btn primary">＋ Tambah Unit</button>
+          </div>
+
+          <div class="table-wrap">
+            <table id="dev-table"></table>
+          </div>
+        </section>
+
+        <section id="page-users" class="page hidden">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Master</span>
+              <h1>Karyawan</h1>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <input id="usr-search" type="text" placeholder="Cari kode / nama / divisi..." />
+            <button id="usr-print-sel" class="btn">🖨 Cetak Label (0)</button>
+            <button id="usr-add" class="btn primary">＋ Tambah Karyawan</button>
+            <button id="dept-manage" class="btn">⚙️ Divisi</button>
+          </div>
+
+          <div class="table-wrap">
+            <table id="usr-table"></table>
+          </div>
+        </section>
+
+        <section id="page-reports" class="page hidden">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Analisis</span>
+              <h1>Laporan</h1>
+            </div>
+          </div>
+
+          <div class="toolbar report-toolbar">
+            <label>
+              Dari
+              <input id="rep-from" type="date" />
+            </label>
+            <label>
+              Sampai
+              <input id="rep-to" type="date" />
+            </label>
+            <select id="rep-status">
+              <option value="">Semua Status</option>
+              <option value="borrowed">Sedang Dipinjam</option>
+              <option value="returned">Sudah Kembali</option>
+              <option value="overdue">Terlambat</option>
+            </select>
+            <button id="rep-filter-btn" class="btn">Filter</button>
+            <button id="rep-print" class="btn primary">🖨 Print</button>
+            <button id="rep-export" class="btn">⬇ Export CSV</button>
+          </div>
+
+          <div class="table-wrap">
+            <table id="rep-table"></table>
+          </div>
+        </section>
+
+        <section id="page-settings" class="page hidden">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">System</span>
+              <h1>Pengaturan</h1>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head small">
+              <h2>💾 Simpan ke File</h2>
+            </div>
+            <p id="fs-status" class="muted"></p>
+            <div class="actions">
+              <button id="fs-enable" class="btn primary">📁 Aktifkan Simpan ke File</button>
+              <button id="fs-reconnect" class="btn hidden">🔗 Sambungkan</button>
+              <button id="fs-reload" class="btn hidden">🔄 Muat Ulang</button>
+              <button id="fs-off" class="btn ghost hidden">🚫 Matikan</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head small">
+              <h2>🔒 Kode Sandi</h2>
+            </div>
+            <p id="pw-status" class="muted"></p>
+            <div class="form-block">
+              <label>
+                Kode sandi sekarang
+                <input id="pw-current" type="password" placeholder="Isi jika kode sandi aktif" />
+              </label>
+              <label>
+                Kode sandi baru
+                <input id="pw-new" type="password" placeholder="Minimal 4 karakter" />
+              </label>
+              <label>
+                Ulangi kode sandi baru
+                <input id="pw-confirm" type="password" />
+              </label>
+            </div>
+            <div class="actions">
+              <button id="pw-save" class="btn primary">💾 Simpan</button>
+              <button id="pw-disable" class="btn ghost">🚫 Nonaktifkan</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head small">
+              <h2>💾 Backup & Pulihkan</h2>
+            </div>
+            <p id="bk-status" class="muted"></p>
+            <div class="actions">
+              <button id="bk-manual" class="btn primary">⬇ Backup Sekarang</button>
+              <label class="btn upload-btn">
+                📥 Pulihkan dari File
+                <input id="bk-restore" type="file" accept=".json,application/json" />
+              </label>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head small">
+              <h2>♻️ Reset Data</h2>
+            </div>
+            <div class="actions">
+              <button id="rs-all" class="btn danger">Reset Semua Data</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head small">
+              <h2>🎨 Tema Tampilan</h2>
+            </div>
+            <div class="actions theme-row">
+              <button class="btn theme-btn" data-theme-btn="light">☀️ Terang</button>
+              <button class="btn theme-btn" data-theme-btn="slate">🌑 Dark Slate</button>
+              <button class="btn theme-btn" data-theme-btn="joker">🩷 Joker</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="modal-backdrop" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <h2 id="modal-title"></h2>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <div id="scanner-backdrop" class="modal-backdrop hidden">
+      <div class="modal-box scanner-box">
+        <h2>Scan Barcode</h2>
+        <div id="scanner-region"></div>
+        <p class="hint">Arahkan kamera ke barcode / QR. Jika kamera tidak tersedia, gunakan input manual.</p>
+        <div class="actions">
+          <button id="scanner-close" class="btn ghost">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
